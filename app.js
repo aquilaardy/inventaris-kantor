@@ -115,7 +115,7 @@ function assetForm(id) {
 function saveAsset(e, id) {
   e.preventDefault(); const f = fd(e);
   if (id) { const a = S.assets.find(x => x.id === id); Object.assign(a, { nama: f.nama.trim(), kat: f.kat, ...finVals(f) }); addLog('Edit data', a.code, 'Data aset diperbarui'); }
-  else { const a = { id: Date.now(), code: nextCode(), nama: f.nama.trim(), kat: f.kat, loc: f.loc, pemegang: (f.pemegang || '').trim(), kond: f.kond, ...finVals(f) }; S.assets.push(a); addLog('Aset baru', a.code, `${a.nama} didaftarkan di ${a.loc}`); }
+  else { const a = { id: Date.now(), code: nextCode(), nama: f.nama.trim(), kat: f.kat, loc: f.loc, pemegang: (f.pemegang || '').trim(), kond: f.kond, ...finVals(f) }; S.assets.unshift(a); addLog('Aset baru', a.code, `${a.nama} didaftarkan di ${a.loc}`); }
   done('Aset disimpan');
 }
 function mutForm(id) {
@@ -174,7 +174,7 @@ function atkForm() {
 function saveAtk(e) {
   e.preventDefault(); const f = fd(e);
   if (+f.min > +f.max) { toast('Batas minimum tidak boleh melebihi maksimum'); return; }
-  S.atk.push({ id: Date.now(), nama: f.nama.trim(), unit: f.unit.trim(), stock: +f.stock, min: +f.min, max: +f.max, merk: f.merk.trim(), dist: f.dist.trim(), harga: +f.harga || 0, tgl: f.tgl });
+  S.atk.unshift({ id: Date.now(), nama: f.nama.trim(), unit: f.unit.trim(), stock: +f.stock, min: +f.min, max: +f.max, merk: f.merk.trim(), dist: f.dist.trim(), harga: +f.harga || 0, tgl: f.tgl });
   addLog('ATK baru', f.nama.trim(), `Didaftarkan dengan stok ${f.stock} ${f.unit.trim()}`); done('Barang disimpan');
 }
 
