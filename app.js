@@ -290,8 +290,4 @@ function openLamp(t, id, i) {
   window.open(URL.createObjectURL(new Blob([a], { type: h.match(/:(.*?);/)[1] })));
 }
 
-/* ---------- Reset ---------- */
-function resetForm() {
-  modal(`<h3>Reset data contoh?</h3><p class="mut">Semua perubahan Anda akan dihapus dan data kembali ke contoh awal.</p><div class="btns" style="margin-top:22px"><button class="ghost" onclick="closeModal()">Batal</button><button class="primary" onclick="S=seed();ui.chk={};done('Data direset')">Reset data</button></div>`);
-}
 render();
