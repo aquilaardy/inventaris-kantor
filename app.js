@@ -1,4 +1,4 @@
-/* Inventaris Kantor: pengelolaan aset & ATK. Data disimpan di browser (localStorage). */
+/* SmartInventory: pengelolaan aset & ATK. Data disimpan di browser (localStorage). */
 const KEY = 'inventaris_kantor_v2', $ = s => document.querySelector(s);
 const LOCS = ['Ruang Direksi', 'Ruang Keuangan', 'Ruang IT', 'Ruang Rapat', 'Gudang'];
 const KATS = ['Elektronik', 'Furnitur', 'Peralatan', 'Kendaraan'];
