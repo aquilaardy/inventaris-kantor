@@ -108,13 +108,13 @@ function assetForm(id) {
   <form onsubmit="saveAsset(event,${id})">
     ${fld('Nama aset', `<input name="nama" required value="${esc(a.nama)}">`)}
     ${fld('Kategori', sel('kat', KATS, a.kat))}
-    ${ed ? '' : fld('Lokasi', sel('loc', LOCS, a.loc)) + fld('Pemegang', '<input name="pemegang" placeholder="Nama pengguna (opsional)">') + fld('Kondisi', sel('kond', KOND, a.kond))}
+    ${ed ? fld('Kondisi', sel('kond', KOND, a.kond)) : fld('Lokasi', sel('loc', LOCS, a.loc)) + fld('Pemegang', '<input name="pemegang" placeholder="Nama pengguna (opsional)">') + fld('Kondisi', sel('kond', KOND, a.kond))}
     ${finForm(a)}
     <div class="btns"><button type="button" class="ghost" onclick="closeModal()">Batal</button><button class="primary">Simpan aset</button></div></form>`);
 }
 function saveAsset(e, id) {
   e.preventDefault(); const f = fd(e);
-  if (id) { const a = S.assets.find(x => x.id === id); Object.assign(a, { nama: f.nama.trim(), kat: f.kat, ...finVals(f) }); addLog('Edit data', a.code, 'Data aset diperbarui'); }
+  if (id) { const a = S.assets.find(x => x.id === id); Object.assign(a, { nama: f.nama.trim(), kat: f.kat, ...finVals(f) }); addLog('Edit data', a.code, 'Data aset diperbarui'); if (f.kond && f.kond !== a.kond) { addLog('Kondisi', a.code, `${a.kond} → ${f.kond}`); a.kond = f.kond; } }
   else { const a = { id: Date.now(), code: nextCode(), nama: f.nama.trim(), kat: f.kat, loc: f.loc, pemegang: (f.pemegang || '').trim(), kond: f.kond, ...finVals(f) }; S.assets.unshift(a); addLog('Aset baru', a.code, `${a.nama} didaftarkan di ${a.loc}`); }
   done('Aset disimpan');
 }
@@ -288,6 +288,25 @@ function openLamp(t, id, i) {
   const [h, b] = item(t, id).lamp[i].data.split(','), u = atob(b), a = new Uint8Array(u.length);
   for (let k = 0; k < u.length; k++) a[k] = u.charCodeAt(k);
   window.open(URL.createObjectURL(new Blob([a], { type: h.match(/:(.*?);/)[1] })));
+}
+
+/* ---------- Cadangan data (berkas teks JSON) ---------- */
+function backup() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
+  a.download = 'smartinventory-backup-' + today() + '.json'; a.click(); toast('Cadangan diunduh');
+}
+function restore(f) {
+  if (!f) return; const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d || !Array.isArray(d.assets) || !Array.isArray(d.atk) || !Array.isArray(d.log)) throw 0;
+      d.opnames = d.opnames || []; const o = S; S = d;
+      if (save()) { render(); toast('Data berhasil dipulihkan'); } else S = o;
+    } catch (e) { toast('Berkas tidak valid: pilih berkas cadangan SmartInventory'); }
+  };
+  r.readAsText(f);
 }
 
 render();
