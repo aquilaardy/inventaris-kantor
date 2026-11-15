@@ -1,5 +1,5 @@
 /* Inventaris Kantor: pengelolaan aset & ATK. Data disimpan di browser (localStorage). */
-const KEY = 'inventaris_kantor_v1', $ = s => document.querySelector(s);
+const KEY = 'inventaris_kantor_v2', $ = s => document.querySelector(s);
 const LOCS = ['Ruang Direksi', 'Ruang Keuangan', 'Ruang IT', 'Ruang Rapat', 'Gudang'];
 const KATS = ['Elektronik', 'Furnitur', 'Peralatan', 'Kendaraan'];
 const KOND = ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Hilang'];
@@ -21,11 +21,13 @@ function seed() {
     ['Mesin Fotokopi Canon', 'Peralatan', 'Gudang', '', 'Rusak Ringan', 2020],
     ['Monitor LG 24 inci', 'Elektronik', 'Ruang IT', 'Rina Putri', 'Baik', 2023]
   ];
-  const assets = A.map((a, i) => ({ id: i + 1, code: 'AST-2026-' + String(i + 1).padStart(4, '0'), nama: a[0], kat: a[1], loc: a[2], pemegang: a[3], kond: a[4], thn: a[5] }));
+  const P = [['2023-03-10', 18500000, 'Dell', 'PT Mitra Komputer', 4, 1850000], ['2021-06-15', 6200000, 'HP', 'CV Sinar Office', 5, 500000], ['2022-09-01', 7800000, 'Epson', 'PT Mitra Komputer', 5, 800000], ['2020-02-20', 4500000, 'Olympic', 'Toko Furnindo', 8, 300000], ['2022-05-12', 1850000, 'Chairman', 'Toko Furnindo', 5, 150000], ['2019-07-08', 5400000, 'Daikin', 'PT Sejuk Abadi', 8, 500000], ['2024-01-22', 16500000, 'Lenovo', 'PT Mitra Komputer', 4, 1650000], ['2018-04-03', 3200000, 'Lion Star', 'Toko Furnindo', 10, 200000], ['2020-11-18', 24000000, 'Canon', 'CV Sinar Office', 8, 2000000], ['2023-03-10', 2750000, 'LG', 'PT Mitra Komputer', 5, 250000]];
+  const assets = A.map((a, i) => ({ id: i + 1, code: 'AST-2026-' + String(i + 1).padStart(4, '0'), nama: a[0], kat: a[1], loc: a[2], pemegang: a[3], kond: a[4], thn: a[5], tgl: P[i][0], harga: P[i][1], merk: P[i][2], dist: P[i][3], umur: P[i][4], residu: P[i][5] }));
+  const Q = [['Sidu', 'CV Sinar Office', 58000, '2026-10-02'], ['Standard', 'Toko ATK Jaya', 2500, '2026-09-15'], ['Snowman', 'Toko ATK Jaya', 7500, '2026-08-20'], ['Bantex', 'CV Sinar Office', 3500, '2026-09-01'], ['Max', 'Toko ATK Jaya', 6000, '2026-07-12'], ['Epson', 'PT Mitra Komputer', 95000, '2026-08-05'], ['Post-it', 'CV Sinar Office', 14000, '2026-09-28']];
   const atk = [
     ['Kertas A4 80 gr', 'rim', 4, 10, 40], ['Pulpen hitam', 'pcs', 120, 50, 200], ['Spidol whiteboard', 'pcs', 8, 10, 40],
     ['Map folder', 'pcs', 85, 30, 100], ['Isi staples', 'box', 60, 10, 30], ['Tinta printer', 'botol', 6, 4, 12], ['Sticky notes', 'pack', 25, 10, 40]
-  ].map((x, i) => ({ id: i + 1, nama: x[0], unit: x[1], stock: x[2], min: x[3], max: x[4] }));
+  ].map((x, i) => ({ id: i + 1, nama: x[0], unit: x[1], stock: x[2], min: x[3], max: x[4], merk: Q[i][0], dist: Q[i][1], harga: Q[i][2], tgl: Q[i][3] }));
   const d = n => new Date(Date.now() - n * 864e5).toISOString();
   const log = [
     { t: d(1), type: 'Kondisi', ref: 'AST-2026-0006', text: 'Baik → Rusak Berat (kompresor tidak berfungsi)' },
@@ -36,7 +38,7 @@ function seed() {
   return { assets, atk, log, opnames: [] };
 }
 function load() { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.assets) return d; } catch (e) {} return seed(); }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { toast('Penyimpanan browser penuh. Hapus lampiran atau foto yang tidak perlu.'); return false; } }
 let S = load();
 let page = 'dash', ui = { q: '', loc: '', kond: '', tab: 'aset', opLoc: LOCS[0], chk: {}, lloc: '' };
 const addLog = (type, ref, text) => S.log.unshift({ t: new Date().toISOString(), type, ref, text });
@@ -48,7 +50,7 @@ const sel = (n, o, v) => `<select name="${n}">${o.map(x => `<option${x === v ? '
 const selc = (o, v, on) => `<select onchange="${on}">${o.map(x => `<option${x === v ? ' selected' : ''}>${x}</option>`).join('')}</select>`;
 const stat = (l, v, c = '') => `<div class="card stat ${c}"><span>${l}</span><b>${v}</b></div>`;
 const badge = k => `<span class="b ${{ Baik: 'ok', 'Rusak Ringan': 'wn', 'Rusak Berat': 'bd', Hilang: 'bd' }[k] || 'ok'}">${k}</span>`;
-function modal(h) { $('#mbody').innerHTML = h; $('#modal').classList.remove('hidden'); }
+function modal(h, w) { $('#mbody').className = 'sheet' + (w ? ' wide' : ''); $('#mbody').innerHTML = h; $('#modal').classList.remove('hidden'); }
 function closeModal() { $('#modal').classList.add('hidden'); }
 let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2400); }
 function done(m) { save(); closeModal(); render(); toast(m); }
@@ -58,7 +60,7 @@ function csv(name, rows) {
 }
 
 /* ---------- Router ---------- */
-const PAGES = { dash: ['Ringkasan', dash], aset: ['Daftar aset', aset], riwayat: ['Riwayat mutasi', riwayat], atk: ['Stok ATK', atk], opname: ['Stock opname', opname], label: ['Label aset', label] };
+const PAGES = { dash: ['Ringkasan', dash], aset: ['Daftar aset', aset], susut: ['Penyusutan aset', susutPage], riwayat: ['Riwayat mutasi', riwayat], atk: ['Stok ATK', atk], opname: ['Stock opname', opname], label: ['Label aset', label] };
 function go(p) { page = p; render(); window.scrollTo(0, 0); }
 function render() {
   $('#nav').innerHTML = Object.entries(PAGES).map(([k, v]) => `<button class="${k === page ? 'on' : ''}" onclick="go('${k}')">${v[0]}</button>`).join('');
@@ -76,7 +78,7 @@ function dash() {
   ];
   if (lo && lo.selisih) al.push(['wn', `Opname terakhir (${lo.lokasi}) menemukan ${lo.selisih} selisih`]);
   const bl = LOCS.map(l => [l, S.assets.filter(a => a.loc === l).length]), mx = Math.max(1, ...bl.map(x => x[1]));
-  return `<div class="stats">${stat('Total aset', S.assets.length)}${stat('Aset bermasalah', bad.length, bad.length ? 'warn' : '')}${stat('ATK menipis', low.length, low.length ? 'warn' : '')}${stat('ATK berlebih', over.length, over.length ? 'info' : '')}</div>
+  return hero() + `<div class="stats">${stat('Total aset', S.assets.length)}${stat('Aset bermasalah', bad.length, bad.length ? 'warn' : '')}${stat('ATK menipis', low.length, low.length ? 'warn' : '')}${stat('ATK berlebih', over.length, over.length ? 'info' : '')}</div>
   <div class="grid2">
     <div class="card"><h3>Perlu perhatian</h3><ul class="al">${al.map(([c, t]) => `<li><i class="d ${c}"></i><span>${esc(t)}</span></li>`).join('') || '<li class="mut">Semua aman.</li>'}</ul></div>
     <div class="card"><h3>Aset per lokasi</h3>${bl.map(([l, n]) => `<div class="lb"><span>${l}</span><i style="width:${n / mx * 55}%"></i><span>${n}</span></div>`).join('')}</div>
@@ -88,7 +90,7 @@ function dash() {
 function asetRows() {
   const q = ui.q.toLowerCase();
   const r = S.assets.filter(a => (!q || (a.nama + a.code + a.pemegang).toLowerCase().includes(q)) && (!ui.loc || a.loc === ui.loc) && (!ui.kond || a.kond === ui.kond));
-  return r.map(a => `<tr><td><b>${esc(a.nama)}</b><div class="mut">${a.code} · ${a.kat}</div></td><td>${esc(a.loc)}</td><td>${esc(a.pemegang) || '<span class="mut">-</span>'}</td><td>${badge(a.kond)}</td><td class="r"><button class="link" onclick="mutForm(${a.id})">Mutasi</button><button class="link" onclick="assetForm(${a.id})">Edit</button></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Tidak ada aset yang cocok.</td></tr>';
+  return r.map(a => `<tr><td><button class="nm" onclick="detail('a',${a.id})">${a.foto ? `<img class="th" src="${a.foto}" alt="">` : ''}<span><b>${esc(a.nama)}</b><small class="mut">${a.code} · ${a.kat}</small></span></button></td><td>${esc(a.loc)}</td><td>${esc(a.pemegang) || '<span class="mut">-</span>'}</td><td>${badge(a.kond)}</td><td class="r"><button class="link" onclick="mutForm(${a.id})">Mutasi</button><button class="link" onclick="assetForm(${a.id})">Edit</button></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Tidak ada aset yang cocok.</td></tr>';
 }
 function aset() {
   const opt = (o, ph) => `<option value="">${ph}</option>` + o.map(x => `<option>${x}</option>`).join('');
@@ -99,21 +101,21 @@ function aset() {
     <div class="row"><button class="ghost" onclick="exportAset()">Ekspor CSV</button><button class="primary" onclick="assetForm(0)">+ Aset baru</button></div></div>
   <div class="card tw"><table><thead><tr><th>Aset</th><th>Lokasi</th><th>Pemegang</th><th>Kondisi</th><th></th></tr></thead><tbody id="rows">${asetRows()}</tbody></table></div>`;
 }
-function exportAset() { csv('aset.csv', [['Kode', 'Nama', 'Kategori', 'Lokasi', 'Pemegang', 'Kondisi', 'Tahun'], ...S.assets.map(a => [a.code, a.nama, a.kat, a.loc, a.pemegang, a.kond, a.thn])]); }
+function exportAset() { csv('aset.csv', [['Kode', 'Nama', 'Kategori', 'Lokasi', 'Pemegang', 'Kondisi', 'Tgl beli', 'Harga', 'Merk', 'Distributor', 'Umur (th)', 'Nilai sisa', 'Nilai buku'], ...S.assets.map(a => [a.code, a.nama, a.kat, a.loc, a.pemegang, a.kond, a.tgl, a.harga, a.merk, a.dist, a.umur, a.residu, susut(a) ? Math.round(susut(a).nb) : ''])]); }
 function assetForm(id) {
-  const ed = !!id, a = S.assets.find(x => x.id === id) || { nama: '', kat: KATS[0], loc: LOCS[0], kond: 'Baik', thn: new Date().getFullYear() };
+  const ed = !!id, a = S.assets.find(x => x.id === id) || { nama: '', kat: KATS[0], loc: LOCS[0], kond: 'Baik', umur: 4, residu: 0, tgl: today() };
   modal(`<h3>${ed ? 'Edit aset' : 'Aset baru'}</h3><p class="mut">${ed ? a.code : 'Kode dibuat otomatis: ' + nextCode()}</p>
   <form onsubmit="saveAsset(event,${id})">
     ${fld('Nama aset', `<input name="nama" required value="${esc(a.nama)}">`)}
     ${fld('Kategori', sel('kat', KATS, a.kat))}
     ${ed ? '' : fld('Lokasi', sel('loc', LOCS, a.loc)) + fld('Pemegang', '<input name="pemegang" placeholder="Nama pengguna (opsional)">') + fld('Kondisi', sel('kond', KOND, a.kond))}
-    ${fld('Tahun perolehan', `<input name="thn" type="number" min="2000" max="2100" value="${a.thn}">`)}
+    ${finForm(a)}
     <div class="btns"><button type="button" class="ghost" onclick="closeModal()">Batal</button><button class="primary">Simpan aset</button></div></form>`);
 }
 function saveAsset(e, id) {
   e.preventDefault(); const f = fd(e);
-  if (id) { const a = S.assets.find(x => x.id === id); Object.assign(a, { nama: f.nama.trim(), kat: f.kat, thn: f.thn }); addLog('Edit data', a.code, 'Data aset diperbarui'); }
-  else { const a = { id: Date.now(), code: nextCode(), nama: f.nama.trim(), kat: f.kat, loc: f.loc, pemegang: (f.pemegang || '').trim(), kond: f.kond, thn: f.thn }; S.assets.push(a); addLog('Aset baru', a.code, `${a.nama} didaftarkan di ${a.loc}`); }
+  if (id) { const a = S.assets.find(x => x.id === id); Object.assign(a, { nama: f.nama.trim(), kat: f.kat, ...finVals(f) }); addLog('Edit data', a.code, 'Data aset diperbarui'); }
+  else { const a = { id: Date.now(), code: nextCode(), nama: f.nama.trim(), kat: f.kat, loc: f.loc, pemegang: (f.pemegang || '').trim(), kond: f.kond, ...finVals(f) }; S.assets.push(a); addLog('Aset baru', a.code, `${a.nama} didaftarkan di ${a.loc}`); }
   done('Aset disimpan');
 }
 function mutForm(id) {
@@ -144,7 +146,7 @@ function atk() {
   return `<div class="bar"><span class="mut">Status dihitung dari batas minimum dan maksimum tiap barang.</span><div class="row"><button class="ghost" onclick="exportAtk()">Ekspor CSV</button><button class="primary" onclick="atkForm()">+ Barang baru</button></div></div>
   <div class="card tw"><table><thead><tr><th>Barang</th><th>Stok</th><th>Batas min – maks</th><th>Status</th><th></th></tr></thead><tbody>${S.atk.map(x => {
     const s = x.stock <= x.min ? ['wn', 'Menipis'] : x.stock > x.max ? ['ac', 'Berlebih'] : ['ok', 'Aman'];
-    return `<tr><td><b>${esc(x.nama)}</b></td><td>${x.stock} ${esc(x.unit)}</td><td class="mut">${x.min} – ${x.max}</td><td><span class="b ${s[0]}">${s[1]}</span></td><td class="r"><button class="link" onclick="atkMove(${x.id},1)">Masuk</button><button class="link" onclick="atkMove(${x.id},-1)">Keluar</button></td></tr>`;
+    return `<tr><td><button class="nm" onclick="detail('t',${x.id})">${x.foto ? `<img class="th" src="${x.foto}" alt="">` : ''}<span><b>${esc(x.nama)}</b><small class="mut">${esc(x.merk || '')}</small></span></button></td><td>${x.stock} ${esc(x.unit)}</td><td class="mut">${x.min} – ${x.max}</td><td><span class="b ${s[0]}">${s[1]}</span></td><td class="r"><button class="link" onclick="atkMove(${x.id},1)">Masuk</button><button class="link" onclick="atkMove(${x.id},-1)">Keluar</button></td></tr>`;
   }).join('')}</tbody></table></div>`;
 }
 function exportAtk() { csv('stok-atk.csv', [['Barang', 'Satuan', 'Stok', 'Minimum', 'Maksimum'], ...S.atk.map(x => [x.nama, x.unit, x.stock, x.min, x.max])]); }
@@ -152,25 +154,27 @@ function atkMove(id, d) {
   const x = S.atk.find(z => z.id === id);
   modal(`<h3>Barang ${d > 0 ? 'masuk' : 'keluar'}</h3><p class="mut">${esc(x.nama)} · stok sekarang ${x.stock} ${esc(x.unit)}</p>
   <form onsubmit="saveMove(event,${id},${d})">${fld('Jumlah', '<input name="qty" type="number" min="1" required>')}
+  ${d > 0 ? `<div class="g2">${fld('Tanggal pembelian', `<input name="tgl" type="date" value="${today()}">`)}${fld('Harga satuan (Rp)', `<input name="harga" type="number" min="0" value="${x.harga || ''}">`)}</div>${fld('Distributor', `<input name="dist" value="${esc(x.dist)}">`)}` : ''}
   ${fld('Catatan', `<input name="cat" placeholder="${d > 0 ? 'Misal: pembelian dari supplier' : 'Misal: diambil Bagian Keuangan'}">`)}
   <div class="btns"><button type="button" class="ghost" onclick="closeModal()">Batal</button><button class="primary">Catat</button></div></form>`);
 }
 function saveMove(e, id, d) {
   e.preventDefault(); const f = fd(e), q = +f.qty, x = S.atk.find(z => z.id === id);
   if (d < 0 && q > x.stock) { toast('Stok tidak cukup untuk jumlah tersebut'); return; }
-  x.stock += d * q; addLog(d > 0 ? 'ATK masuk' : 'ATK keluar', x.nama, `${d > 0 ? '+' : '-'}${q} ${x.unit}${f.cat.trim() ? ' (' + f.cat.trim() + ')' : ''} → stok ${x.stock}`);
+  x.stock += d * q; if (d > 0) { if (f.tgl) x.tgl = f.tgl; if (+f.harga) x.harga = +f.harga; if (f.dist.trim()) x.dist = f.dist.trim(); } addLog(d > 0 ? 'ATK masuk' : 'ATK keluar', x.nama, `${d > 0 ? '+' : '-'}${q} ${x.unit}${f.cat.trim() ? ' (' + f.cat.trim() + ')' : ''} → stok ${x.stock}`);
   done('Stok diperbarui');
 }
 function atkForm() {
   modal(`<h3>Barang ATK baru</h3><form onsubmit="saveAtk(event)">
   ${fld('Nama barang', '<input name="nama" required>')}${fld('Satuan', '<input name="unit" required placeholder="pcs, rim, box">')}
   ${fld('Stok awal', '<input name="stock" type="number" min="0" required value="0">')}${fld('Batas minimum', '<input name="min" type="number" min="0" required value="5">')}${fld('Batas maksimum', '<input name="max" type="number" min="1" required value="50">')}
+  <div class="g2">${fld('Merk', '<input name="merk">')}${fld('Distributor', '<input name="dist">')}${fld('Harga satuan (Rp)', '<input name="harga" type="number" min="0">')}${fld('Tanggal pembelian', `<input name="tgl" type="date" value="${today()}">`)}</div>
   <div class="btns"><button type="button" class="ghost" onclick="closeModal()">Batal</button><button class="primary">Simpan barang</button></div></form>`);
 }
 function saveAtk(e) {
   e.preventDefault(); const f = fd(e);
   if (+f.min > +f.max) { toast('Batas minimum tidak boleh melebihi maksimum'); return; }
-  S.atk.push({ id: Date.now(), nama: f.nama.trim(), unit: f.unit.trim(), stock: +f.stock, min: +f.min, max: +f.max });
+  S.atk.push({ id: Date.now(), nama: f.nama.trim(), unit: f.unit.trim(), stock: +f.stock, min: +f.min, max: +f.max, merk: f.merk.trim(), dist: f.dist.trim(), harga: +f.harga || 0, tgl: f.tgl });
   addLog('ATK baru', f.nama.trim(), `Didaftarkan dengan stok ${f.stock} ${f.unit.trim()}`); done('Barang disimpan');
 }
 
@@ -231,6 +235,59 @@ function label() {
   return `<div class="bar noprint"><div class="filters"><select onchange="ui.lloc=this.value;render()"><option value="">Semua lokasi</option>${LOCS.map(x => `<option${x === ui.lloc ? ' selected' : ''}>${x}</option>`).join('')}</select></div><button class="primary" onclick="window.print()">Cetak label</button></div>
   <p class="mut noprint" style="margin-bottom:20px">Kode dibuat otomatis dan unik. Barcode hanya ilustrasi untuk demo.</p>
   <div class="labels">${l.map(a => `<div class="lab"><b>${esc(a.nama)}</b><span class="mut">${esc(a.loc)}</span>${bars(a.code)}<code>${a.code}</code></div>`).join('')}</div>`;
+}
+
+/* ---------- Tambahan: penyusutan, data pembelian, foto & lampiran ---------- */
+const rp = n => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID');
+const tgl = d => d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+const today = () => new Date().toISOString().slice(0, 10);
+const item = (t, id) => (t === 'a' ? S.assets : S.atk).find(x => x.id === id);
+const finForm = a => `<div class="g2">${fld('Tanggal pembelian', `<input name="tgl" type="date" required value="${a.tgl || ''}">`)}${fld('Harga perolehan (Rp)', `<input name="harga" type="number" min="0" required value="${a.harga || ''}">`)}${fld('Merk', `<input name="merk" value="${esc(a.merk)}">`)}${fld('Distributor', `<input name="dist" value="${esc(a.dist)}">`)}${fld('Umur manfaat (tahun)', `<input name="umur" type="number" min="1" required value="${a.umur || 4}">`)}${fld('Nilai sisa (Rp)', `<input name="residu" type="number" min="0" value="${a.residu || 0}">`)}</div>`;
+const finVals = f => ({ tgl: f.tgl, harga: +f.harga || 0, merk: f.merk.trim(), dist: f.dist.trim(), umur: +f.umur || 1, residu: +f.residu || 0 });
+function susut(a) { /* garis lurus, per bulan */
+  if (!a.harga || !a.tgl || !a.umur) return null;
+  const d = new Date(a.tgl), n = new Date(), m = Math.max(0, (n.getFullYear() - d.getFullYear()) * 12 + n.getMonth() - d.getMonth()), tot = a.umur * 12, k = Math.min(m, tot), base = a.harga - (a.residu || 0), ak = base * k / tot;
+  return { thn: base / a.umur, ak, nb: a.harga - ak, pct: k / tot, sisa: tot - k };
+}
+function hero() {
+  const s = S.assets.map(susut).filter(Boolean), nb = s.reduce((t, x) => t + x.nb, 0), ak = s.reduce((t, x) => t + x.ak, 0);
+  return `<div class="hero"><span>Nilai buku seluruh aset</span><b>${rp(nb)}</b><small>Sudah disusutkan ${rp(ak)} dari ${s.length} aset bernilai</small></div>`;
+}
+function susutPage() {
+  const r = S.assets.map(a => [a, susut(a)]), v = r.filter(x => x[1]), sum = k => v.reduce((t, x) => t + x[1][k], 0), hp = v.reduce((t, x) => t + x[0].harga, 0);
+  return `<div class="stats">${stat('Harga perolehan', rp(hp))}${stat('Akumulasi penyusutan', rp(sum('ak')), 'info')}${stat('Nilai buku', rp(sum('nb')))}</div>
+  <div class="card tw"><table><thead><tr><th>Aset</th><th>Harga perolehan</th><th>Susut / tahun</th><th>Akumulasi</th><th>Nilai buku</th><th>Sisa umur</th></tr></thead><tbody>${r.map(([a, s]) => s ? `<tr><td><button class="nm" onclick="detail('a',${a.id})"><span><b>${esc(a.nama)}</b><small class="mut">${a.code} · beli ${tgl(a.tgl)}</small></span></button></td><td>${rp(a.harga)}</td><td>${rp(s.thn)}</td><td>${rp(s.ak)}</td><td><b>${rp(s.nb)}</b><div class="pb"><i style="width:${(s.pct * 100).toFixed(0)}%"></i></div></td><td>${s.sisa ? Math.floor(s.sisa / 12) + ' th ' + s.sisa % 12 + ' bln' : '<span class="b wn">Habis disusutkan</span>'}</td></tr>` : `<tr><td>${esc(a.nama)}</td><td colspan="5" class="mut">Data pembelian belum diisi</td></tr>`).join('')}</tbody></table></div>
+  <p class="mut">Metode garis lurus: (harga perolehan − nilai sisa) ÷ umur manfaat, dihitung per bulan sejak bulan pembelian sampai bulan ini.</p>`;
+}
+function detail(t, id) {
+  const x = item(t, id), A = t === 'a', s = A && susut(x), L = x.lamp || [], jn = A ? ['Invoice', 'Kartu garansi', 'Berita acara', 'Lainnya'] : ['Invoice', 'Surat jalan', 'Lainnya'];
+  const inf = (A ? [['Kode', x.code], ['Kategori', x.kat], ['Lokasi', x.loc], ['Pemegang', x.pemegang || '-'], ['Kondisi', x.kond]] : [['Stok', x.stock + ' ' + x.unit], ['Batas min – maks', x.min + ' – ' + x.max]])
+    .concat([['Tgl pembelian', tgl(x.tgl)], [A ? 'Harga perolehan' : 'Harga satuan', x.harga ? rp(x.harga) : '-'], ['Merk', x.merk || '-'], ['Distributor', x.dist || '-']]);
+  modal(`<div class="dh"><div class="ph">${x.foto ? `<img src="${x.foto}" alt="Foto ${esc(x.nama)}">` : '<span>Belum ada foto</span>'}</div>
+  <div><h3>${esc(x.nama)}</h3><p class="mut">${A ? x.code : 'Barang ATK'}</p><label class="ghost up">${x.foto ? 'Ganti foto' : 'Unggah foto'}<input type="file" accept="image/*" hidden onchange="setFoto('${t}',${id},this.files[0])"></label></div></div>
+  <dl class="inf">${inf.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+  ${s ? `<div class="sb"><b>Penyusutan</b><span>Nilai buku ${rp(s.nb)} dari ${rp(x.harga)}</span><div class="pb"><i style="width:${(s.pct * 100).toFixed(0)}%"></i></div><small class="mut">${rp(s.thn)} per tahun, akumulasi ${rp(s.ak)}</small></div>` : ''}
+  <h4>Lampiran</h4><ul class="lp">${L.map((l, i) => `<li><span class="b ac">${esc(l.jenis)}</span><span class="fn">${esc(l.nama)}</span><button class="link" onclick="openLamp('${t}',${id},${i})">Buka</button><button class="link" onclick="delLamp('${t}',${id},${i})">Hapus</button></li>`).join('') || '<li class="mut">Belum ada lampiran.</li>'}</ul>
+  <div class="row lu"><select id="lj">${jn.map(j => `<option>${j}</option>`).join('')}</select><label class="ghost up">+ Tambah berkas<input type="file" accept="image/*,application/pdf" hidden onchange="addLamp('${t}',${id},this.files[0])"></label></div>
+  <div class="btns"><button class="primary" onclick="closeModal()">Selesai</button></div>`, 1);
+}
+function readFile(f, cb) {
+  if (!f) return; const r = new FileReader();
+  if (f.type.startsWith('image/')) r.onload = () => { const im = new Image(); im.onload = () => { const k = Math.min(1, 900 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = im.width * k; c.height = im.height * k; c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', .72)); }; im.src = r.result; };
+  else if (f.size > 600000) { toast('Berkas PDF maksimal 600 KB'); return; }
+  else r.onload = () => cb(r.result);
+  r.readAsDataURL(f);
+}
+function setFoto(t, id, f) { const x = item(t, id); readFile(f, d => { const o = x.foto; x.foto = d; if (save()) toast('Foto disimpan'); else x.foto = o; detail(t, id); render(); }); }
+function addLamp(t, id, f) {
+  const x = item(t, id), j = $('#lj').value;
+  readFile(f, d => { (x.lamp = x.lamp || []).push({ jenis: j, nama: f.name, data: d }); addLog('Lampiran', x.code || x.nama, `${j} ditambahkan: ${f.name}`); if (save()) toast('Lampiran disimpan'); else { x.lamp.pop(); S.log.shift(); } detail(t, id); });
+}
+function delLamp(t, id, i) { item(t, id).lamp.splice(i, 1); save(); detail(t, id); }
+function openLamp(t, id, i) {
+  const [h, b] = item(t, id).lamp[i].data.split(','), u = atob(b), a = new Uint8Array(u.length);
+  for (let k = 0; k < u.length; k++) a[k] = u.charCodeAt(k);
+  window.open(URL.createObjectURL(new Blob([a], { type: h.match(/:(.*?);/)[1] })));
 }
 
 /* ---------- Reset ---------- */
